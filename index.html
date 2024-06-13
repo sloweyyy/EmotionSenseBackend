@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EmotionSense</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+        
+        main {
+            flex: 1 0 auto;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        #face-img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav>
+            <div class="nav-wrapper indigo darken-4">
+                <a href="#" class="brand-logo center">EmotionSense</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="row">
+                <form id="upload-form" class="col s12" action="/predict_with_hog" method="POST" enctype="multipart/form-data">
+                    <div class="file-field input-field">
+                        <div class="btn indigo darken-4">
+                            <span><i class="material-icons left">cloud_upload</i>Upload Image</span>
+                            <input type="file" name="file" id="file-input" accept="image/*" required>
+                        </div>
+                        <div class="file-path-wrapper">
+                            <input class="file-path validate" type="text">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn waves-effect waves-light indigo darken-4">
+                        Predict Emotion with HOG
+                        <i class="material-icons right">sentiment_satisfied_alt</i>
+                    </button>
+                </form>
+            </div>
+            <div class="row">
+                <h5 id="result-hog" class="col s12"></h5>
+                <div class="col s12">
+                    <img id="face-img-hog" alt="Face Image with HOG">
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                <form id="upload-form-without-hog" class="col s12" action="/predict_without_hog" method="POST" enctype="multipart/form-data">
+                    <div class="file-field input-field">
+                        <div class="btn indigo darken-4">
+                            <span><i class="material-icons left">cloud_upload</i>Upload Image</span>
+                            <input type="file" name="file" id="file-input-without-hog" accept="image/*" required>
+                        </div>
+                        <div class="file-path-wrapper">
+                            <input class="file-path validate" type="text">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn waves-effect waves-light indigo darken-4">
+                        Predict Emotion without HOG
+                        <i class="material-icons right">sentiment_satisfied_alt</i>
+                    </button>
+                </form>
+            </div>
+            <div class="row">
+                <h5 id="result-without-hog" class="col s12"></h5>
+                <div class="col s12">
+                    <img id="face-img-without-hog" alt="Face Image without HOG">
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="page-footer indigo darken-4">
+        <div class="footer-copyright">
+            <div class="container">
+                © 2023 EmotionSense
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            M.AutoInit();
+        });
+
+        document.getElementById('upload-form').addEventListener('submit', async(event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+
+            const response = await fetch('/predict_with_hog', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const emotion = response.headers.get('Emotion');
+                document.getElementById('result-hog').innerText = `Predicted Emotion with HOG: ${emotion}`;
+
+                const img = document.getElementById('face-img-hog');
+                img.src = URL.createObjectURL(blob);
+                img.onload = () => {
+                    URL.revokeObjectURL(img.src);
+                };
+            } else {
+                document.getElementById('result-hog').innerText = 'Error in prediction with HOG';
+            }
+        });
+
+        document.getElementById('upload-form-without-hog').addEventListener('submit', async(event) => {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+
+            const response = await fetch('/predict_without_hog', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const emotion = response.headers.get('Emotion');
+                document.getElementById('result-without-hog').innerText = `Predicted Emotion without HOG: ${emotion}`;
+
+                const img = document.getElementById('face-img-without-hog');
+                img.src = URL.createObjectURL(blob);
+                img.onload = () => {
+                    URL.revokeObjectURL(img.src);
+                };
+            } else {
+                document.getElementById('result-without-hog').innerText = 'Error in prediction without HOG';
+            }
+        });
+    </script>
+</body>
+
+</html>
