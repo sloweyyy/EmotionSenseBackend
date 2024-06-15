@@ -31,6 +31,10 @@ COPY app.py /app/
 COPY predict.py /app/
 COPY svm_model_without_hog.pkl /app/
 COPY svm_model_with_hog.pkl /app/
+COPY dt_model_without_hog.pkl /app/
+COPY dt_model_with_hog.pkl /app/
+COPY rf_model_without_hog.pkl /app/
+COPY rf_model_with_hog.pkl /app/
 COPY gunicorn.conf.py /app/
 COPY index.html /app/
 
