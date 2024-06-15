@@ -14,24 +14,36 @@
             min-height: 100vh;
             flex-direction: column;
         }
-        
+
         main {
             flex: 1 0 auto;
         }
-        
+
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 30px auto;
             padding: 20px;
             text-align: center;
         }
-        
+
         #face-img {
             max-width: 100%;
             height: auto;
             margin-top: 20px;
             border-radius: 10px;
             box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .result-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .result-item {
+            flex: 1;
+            text-align: center;
+            margin: 0 10px;
         }
     </style>
 </head>
@@ -48,7 +60,7 @@
     <main>
         <div class="container">
             <div class="row">
-                <form id="upload-form" class="col s12" action="/predict_with_hog" method="POST" enctype="multipart/form-data">
+                <form id="upload-form" class="col s12" enctype="multipart/form-data">
                     <div class="file-field input-field">
                         <div class="btn indigo darken-4">
                             <span><i class="material-icons left">cloud_upload</i>Upload Image</span>
@@ -58,41 +70,28 @@
                             <input class="file-path validate" type="text">
                         </div>
                     </div>
-                    <button type="submit" class="btn waves-effect waves-light indigo darken-4">
-                        Predict Emotion with HOG
-                        <i class="material-icons right">sentiment_satisfied_alt</i>
-                    </button>
-                </form>
-            </div>
-            <div class="row">
-                <h5 id="result-hog" class="col s12"></h5>
-                <div class="col s12">
-                    <img id="face-img-hog" alt="Face Image with HOG">
-                </div>
-            </div>
-        </div>
-
-        <div class="container">
-            <div class="row">
-                <form id="upload-form-without-hog" class="col s12" action="/predict_without_hog" method="POST" enctype="multipart/form-data">
-                    <div class="file-field input-field">
-                        <div class="btn indigo darken-4">
-                            <span><i class="material-icons left">cloud_upload</i>Upload Image</span>
-                            <input type="file" name="file" id="file-input-without-hog" accept="image/*" required>
-                        </div>
-                        <div class="file-path-wrapper">
-                            <input class="file-path validate" type="text">
-                        </div>
+                    <div class="input-field col s12">
+                        <select id="model-select" name="model" required>
+                            <option value="" disabled selected>Choose your model</option>
+                            <option value="svm">SVM</option>
+                            <option value="dt">Decision Tree</option>
+                            <option value="rf">Random Forest</option>
+                        </select>
+                        <label>Model Selection</label>
                     </div>
                     <button type="submit" class="btn waves-effect waves-light indigo darken-4">
-                        Predict Emotion without HOG
+                        Predict Emotion
                         <i class="material-icons right">sentiment_satisfied_alt</i>
                     </button>
                 </form>
             </div>
-            <div class="row">
-                <h5 id="result-without-hog" class="col s12"></h5>
-                <div class="col s12">
+            <div class="row result-container">
+                <div class="col s6 result-item">
+                    <h5 id="result-with-hog" class="col s12">With HOG:</h5>
+                    <img id="face-img-with-hog" alt="Face Image with HOG">
+                </div>
+                <div class="col s6 result-item">
+                    <h5 id="result-without-hog" class="col s12">Without HOG:</h5>
                     <img id="face-img-without-hog" alt="Face Image without HOG">
                 </div>
             </div>
@@ -102,61 +101,66 @@
     <footer class="page-footer indigo darken-4">
         <div class="footer-copyright">
             <div class="container">
-                © 2023 EmotionSense
+                © 2024 SloWey
             </div>
         </div>
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             M.AutoInit();
         });
 
-        document.getElementById('upload-form').addEventListener('submit', async(event) => {
+        document.getElementById('upload-form').addEventListener('submit', async (event) => {
             event.preventDefault();
             const formData = new FormData(event.target);
+            const model = formData.get('model');
 
-            const response = await fetch('/predict_with_hog', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                const blob = await response.blob();
-                const emotion = response.headers.get('Emotion');
-                document.getElementById('result-hog').innerText = `Predicted Emotion with HOG: ${emotion}`;
-
-                const img = document.getElementById('face-img-hog');
-                img.src = URL.createObjectURL(blob);
-                img.onload = () => {
-                    URL.revokeObjectURL(img.src);
-                };
-            } else {
-                document.getElementById('result-hog').innerText = 'Error in prediction with HOG';
+            if (!model) {
+                document.getElementById('result-with-hog').innerText = 'Please select a model';
+                document.getElementById('result-without-hog').innerText = 'Please select a model';
+                return;
             }
-        });
 
-        document.getElementById('upload-form-without-hog').addEventListener('submit', async(event) => {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-
-            const response = await fetch('/predict_without_hog', {
+            const withHogResponse = await fetch('/predict', {
                 method: 'POST',
-                body: formData
+                body: formData,
+                headers: {
+                    'Model-Key': `${model}_with_hog`
+                }
             });
 
-            if (response.ok) {
-                const blob = await response.blob();
-                const emotion = response.headers.get('Emotion');
-                document.getElementById('result-without-hog').innerText = `Predicted Emotion without HOG: ${emotion}`;
+            const withoutHogResponse = await fetch('/predict', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Model-Key': `${model}_without_hog`
+                }
+            });
 
-                const img = document.getElementById('face-img-without-hog');
-                img.src = URL.createObjectURL(blob);
-                img.onload = () => {
-                    URL.revokeObjectURL(img.src);
+            if (withHogResponse.ok && withoutHogResponse.ok) {
+                const withHogBlob = await withHogResponse.blob();
+                const withoutHogBlob = await withoutHogResponse.blob();
+                const withHogEmotion = withHogResponse.headers.get('Emotion');
+                const withoutHogEmotion = withoutHogResponse.headers.get('Emotion');
+
+                document.getElementById('result-with-hog').innerText = `With HOG: ${withHogEmotion}`;
+                document.getElementById('result-without-hog').innerText = `Without HOG: ${withoutHogEmotion}`;
+
+                const withHogImg = document.getElementById('face-img-with-hog');
+                withHogImg.src = URL.createObjectURL(withHogBlob);
+                withHogImg.onload = () => {
+                    URL.revokeObjectURL(withHogImg.src);
+                };
+
+                const withoutHogImg = document.getElementById('face-img-without-hog');
+                withoutHogImg.src = URL.createObjectURL(withoutHogBlob);
+                withoutHogImg.onload = () => {
+                    URL.revokeObjectURL(withoutHogImg.src);
                 };
             } else {
-                document.getElementById('result-without-hog').innerText = 'Error in prediction without HOG';
+                document.getElementById('result-with-hog').innerText = 'Error in prediction';
+                document.getElementById('result-without-hog').innerText = 'Error in prediction';
             }
         });
     </script>
