@@ -35,7 +35,6 @@ COPY dt_model_without_hog.pkl /app/
 COPY dt_model_with_hog.pkl /app/
 COPY rf_model_without_hog.pkl /app/
 COPY rf_model_with_hog.pkl /app/
-COPY gunicorn.conf.py /app/
 COPY index.html /app/
 
 RUN apt-get update && apt-get install -y curl 
@@ -47,4 +46,4 @@ RUN /bin/bash -c "source venv/bin/activate && \
 
 EXPOSE 5000
 
-CMD ["/bin/bash", "-c", "source venv/bin/activate && gunicorn --config gunicorn.conf.py app:app"]
+CMD ["/bin/bash", "-c", "source venv/bin/activate && gunicorn app:app"] 
